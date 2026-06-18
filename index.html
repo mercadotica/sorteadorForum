@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sorteador de Live · YouTube</title>
+<style>
+  :root{
+    --bg:#303a8f; --panel:#303a8f; --panel2:#000000; --line:#303a8f;
+    --txt:#febd23; --muted:#febd23; --brand:#3b82f6; --brand2:#2563eb;
+    --green:#22c55e; --green2:#16a34a; --gold:#f5b942; --red:#ef4444;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:radial-gradient(1200px 600px at 80% -10%,#16203a,transparent),var(--bg);
+    color:var(--txt); font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
+    min-height:100vh; padding:28px 16px 60px;
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+  
+  /* AJUSTE NO CABEÇALHO: Alinha logo e textos lado a lado */
+  header.top{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    margin-bottom:22px;
+  }
+  .logo{
+    width:56px; /* Aumentado ligeiramente para destacar a logo */
+    height:56px;
+    border-radius:12px;
+    background:linear-gradient(135deg,var(--brand),#7c3aed);
+    display:grid;
+    place-items:center;
+    box-shadow:0 8px 24px rgba(59,130,246,.35);
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .logo img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .header-text{
+    display: flex;
+    flex-direction: column;
+  }
+  header.top h1{font-size:24px;margin:0;font-weight:700;letter-spacing:.2px}
+  header.top p{margin:4px 0 0;color:var(--muted);font-size:13px;opacity:0.9}
+  /* --------------------------------------------------- */
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:880px){.grid{grid-template-columns:1fr}}
+  .card{background:linear-gradient(180deg,var(--panel),#10172a);border:1px solid var(--line);
+    border-radius:var(--radius);padding:20px}
+  .card h2{margin:0 0 14px;font-size:15px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);
+    display:flex;align-items:center;gap:8px}
+  label{display:block;font-size:12.5px;color:var(--muted);margin:12px 0 6px}
+  input[type=text],input[type=number],input[type=password]{
+    width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    border-radius:10px;padding:11px 13px;font-size:14px;outline:none;transition:.15s}
+  input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(59,130,246,.18)}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .row>*{flex:1;min-width:120px}
+  button{cursor:pointer;border:none;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:600;
+    color:#fff;transition:.15s;letter-spacing:.2px}
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .btn-brand{background:linear-gradient(135deg,var(--brand),var(--brand2))}
+  .btn-green{background:linear-gradient(135deg,var(--green),var(--green2))}
+  .btn-red{background:linear-gradient(135deg,#f87171,var(--red))}
+  .btn-ghost{background:var(--panel2);border:1px solid var(--line);color:var(--txt)}
+  .btn-gold{background:linear-gradient(135deg,#fbbf24,var(--gold));color:#3a2a00}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
+  .status{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;
+    padding:6px 12px;border-radius:999px;background:var(--panel2);border:1px solid var(--line)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--muted)}
+  .dot.live{background:var(--green);box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:pulse 1.4s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.5)}70%{box-shadow:0 0 0 9px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+  .counter{font-size:42px;font-weight:800;line-height:1}
+  .counter small{font-size:13px;color:var(--muted);font-weight:500;display:block;margin-top:4px;letter-spacing:1px;text-transform:uppercase}
+  .list{margin-top:14px;max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+  .list .item{display:flex;gap:10px;align-items:flex-start;padding:10px 13px;border-bottom:1px solid var(--line);font-size:14px}
+  .list .item:last-child{border-bottom:none}
+  .list .item.won{opacity:.4}
+  .list .av{width:26px;height:26px;border-radius:50%;background:var(--brand);display:grid;place-items:center;
+    font-size:12px;font-weight:700;flex:none;color:#fff}
+  .list .who{font-weight:600}
+  .list .msg{color:var(--muted);font-size:13px;margin-top:2px;word-break:break-word}
+  .empty{padding:30px;text-align:center;color:var(--muted);font-size:14px}
+  .winners{margin-top:16px}
+  .winner{display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,#1e293b,#162033);
+    border:1px solid var(--gold);border-radius:12px;padding:14px 16px;margin-bottom:10px;
+    animation:pop .4s ease}
+  @keyframes pop{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+  .winner .trophy{font-size:26px}
+  .winner .wname{font-size:18px;font-weight:700}
+  .winner .wmsg{font-size:13px;color:var(--muted);margin-top:2px}
+  .badge{font-size:11px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);
+    padding:3px 9px;border-radius:999px;margin-left:auto}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .toolbar button{flex:1;min-width:140px}
+  .err{background:rgba(239,68,68,.12);border:1px solid var(--red);color:#fecaca;padding:11px 13px;
+    border-radius:10px;font-size:13px;margin-top:12px;display:none;line-height:1.5}
+  details.cfg summary{cursor:pointer;color:var(--muted);font-size:13px;list-style:none}
+  details.cfg summary::-webkit-details-marker{display:none}
+  .saved{color:var(--green);font-size:12px;margin-left:8px;opacity:0;transition:.3s}
+  .saved.show{opacity:1}
+  .pool-info{font-size:13px;color:var(--muted);margin-top:6px}
+  .pool-info b{color:var(--txt)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="logo">
+        <img src="img/logoquadrada.png" alt="Mercadotica">
+    </div>
+    <div class="header-text">
+        <h1>Sorteador de Live</h1>
+        <p>Captura comentários do YouTube em tempo real e sorteia ganhadores</p>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- COLUNA ESQUERDA: CONFIG + CAPTURA -->
+    <div class="card">
+      <h2>⚙️ Configuração da live</h2>
+
+      <label>Link da live (YouTube)</label>
+      <input type="text" id="liveUrl" placeholder="https://www.youtube.com/watch?v=...">
+
+      <details class="cfg" style="margin-top:14px">
+        <summary>🔑 Chave da API do YouTube (clique para configurar)</summary>
+        <label>Chave da API (Google Cloud)</label>
+        <input type="password" id="apiKey" placeholder="AIza...">
+        <p class="hint">A chave fica salva só no seu navegador. Veja o passo a passo de como criar no rodapé desta página.</p>
+      </details>
+
+      <div class="row" style="margin-top:16px">
+        <button class="btn-ghost" id="saveCfg" style="flex:none">💾 Salvar config<span class="saved" id="savedMsg">✓ salvo</span></button>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--line);margin:20px 0">
+
+      <h2>🎬 Captura de comentários</h2>
+      <div class="row" style="align-items:center;margin-bottom:8px">
+        <div class="counter"><span id="count">0</span><small>comentários captados</small></div>
+        <div style="flex:none"><span class="status"><span class="dot" id="statusDot"></span><span id="statusTxt">Parado</span></span></div>
+      </div>
+      <div class="row">
+        <button class="btn-green" id="startBtn">▶ Iniciar captura</button>
+        <button class="btn-red" id="stopBtn" disabled>⏹ Parar captura</button>
+      </div>
+      <div class="err" id="errBox"></div>
+      <p class="hint">Ao iniciar, só entram comentários feitos a partir daquele momento. Pare quando quiser fechar a janela de participação.</p>
+
+      <div class="list" id="commentList"><div class="empty">Nenhum comentário ainda.</div></div>
+      <div class="toolbar">
+        <button class="btn-ghost" id="clearAll">🗑️ Limpar tudo (nova live)</button>
+      </div>
+    </div>
+
+    <!-- COLUNA DIREITA: SORTEIO -->
+    <div class="card">
+      <h2>🎁 Sorteio</h2>
+      <label>Quantas pessoas sortear?</label>
+      <input type="number" id="qty" min="1" value="1">
+      <div class="pool-info" id="poolInfo">Disponíveis para sorteio: <b>0</b></div>
+
+      <div class="row" style="margin-top:14px">
+        <button class="btn-gold" id="drawBtn">🎲 Sortear</button>
+      </div>
+
+      <div class="winners" id="winners"></div>
+
+      <div class="toolbar" id="resetTools" style="display:none">
+        <button class="btn-brand" id="newDraw">🔄 Novo sorteio (libera todos de novo)</button>
+      </div>
+      <p class="hint">Quem é sorteado sai do próximo sorteio automaticamente. Clique em "Novo sorteio" para zerar e deixar todo mundo elegível de novo.</p>
+    </div>
+  </div>
+
+  <details class="cfg" style="margin-top:22px;color:var(--muted);font-size:13px;line-height:1.7">
+    <summary style="font-size:14px;font-weight:600;color:var(--txt)">❓ Como criar a chave da API do YouTube (uma vez só)</summary>
+    <ol style="margin-top:10px;padding-left:20px">
+      <li>Acesse <b>console.cloud.google.com</b> e faça login.</li>
+      <li>Crie um projeto (ou use um existente).</li>
+      <li>No menu, vá em <b>APIs e serviços → Biblioteca</b>, busque <b>YouTube Data API v3</b> e clique em <b>Ativar</b>.</li>
+      <li>Vá em <b>APIs e serviços → Credenciais → Criar credenciais → Chave de API</b>.</li>
+      <li>Copie a chave (começa com <b>AIza...</b>) e cole no campo acima.</li>
+    </ol>
+    <p>A chave é gratuita. Cada dia há uma cota de uso de sobra para vários sorteios. A live precisa estar <b>ao vivo com chat aberto</b> no momento da captura.</p>
+  </details>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const LS = window.localStorage;
+
+  // ---------- Estado ----------
+  let comments = [];          // {id, name, msg, ts}
+  const seen = new Set();     // ids de mensagem já vistos
+  const won = new Set();      // ids já sorteados (excluídos do próximo)
+  let polling = false;
+  let chatId = null;
+  let pageToken = null;
+  let captureStart = 0;
+  let pollTimer = null;
+
+  // ---------- Persistência de config ----------
+  function loadCfg(){
+    $("liveUrl").value = LS.getItem("sl_url") || "";
+    $("apiKey").value  = LS.getItem("sl_key") || "";
+  }
+  function saveCfg(){
+    LS.setItem("sl_url", $("liveUrl").value.trim());
+    LS.setItem("sl_key", $("apiKey").value.trim());
+    const m = $("savedMsg"); m.classList.add("show");
+    setTimeout(()=>m.classList.remove("show"), 1500);
+  }
+  $("saveCfg").addEventListener("click", saveCfg);
+
+  // ---------- Util ----------
+  function showErr(t){ const b=$("errBox"); b.textContent=t; b.style.display="block"; }
+  function clearErr(){ $("errBox").style.display="none"; }
+
+  // Corrigido regex para aceitar URLs mobile e shorts de forma mais robusta
+  function extractVideoId(url){
+    if(!url) return null;
+    url = url.trim();
+    if(/^[\w-]{11}$/.test(url)) return url;
+    let m;
+    if((m = url.match(/[?&]v=([\w-]{11})/))) return m[1];
+    if((m = url.match(/youtu\.be\/([\w-]{11})/))) return m[1];
+    if((m = url.match(/\/live\/([\w-]{11})/))) return m[1];
+    if((m = url.match(/\/embed\/([\w-]{11})/))) return m[1];
+    if((m = url.match(/\/shorts\/([\w-]{11})/))) return m[1];
+    return null;
+  }
+
+  function initials(name){
+    const p = (name||"?").trim().split(/\s+/);
+    return ((p[0]||"?")[0] + (p[1]?p[1][0]:"")).toUpperCase();
+  }
+
+  // ---------- Render ----------
+  function render(){
+    $("count").textContent = comments.length;
+    const list = $("commentList");
+    if(comments.length === 0){
+      list.innerHTML = '<div class="empty">Nenhum comentário ainda.</div>';
+    } else {
+      list.innerHTML = comments.map(c =>
+        `<div class="item ${won.has(c.id)?'won':''}">
+           <div class="av">${initials(c.name)}</div>
+           <div>
+             <div class="who">${escapeHtml(c.name)}</div>
+             <div class="msg">${escapeHtml(c.msg)}</div>
+           </div>
+         </div>`).join("");
+    }
+    const avail = comments.filter(c=>!won.has(c.id)).length;
+    $("poolInfo").innerHTML = `Disponíveis para sorteio: <b>${avail}</b>` +
+      (won.size ? ` &nbsp;·&nbsp; já sorteados: <b>${won.size}</b>` : "");
+  }
+
+  function escapeHtml(s){
+    return (s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ---------- API YouTube ----------
+  async function getLiveChatId(videoId, key){
+    const u = `https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=${videoId}&key=${key}`;
+    const r = await fetch(u);
+    const d = await r.json();
+    if(d.error) throw new Error(d.error.message || "Erro na API");
+    if(!d.items || !d.items.length) throw new Error("Vídeo não encontrado. Confira o link.");
+    const det = d.items[0].liveStreamingDetails;
+    if(!det || !det.activeLiveChatId) throw new Error("Essa live não tem chat ativo agora. Verifique se está ao vivo com o chat aberto.");
+    return det.activeLiveChatId;
+  }
+
+  async function fetchMessages(key){
+    let u = `https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${encodeURIComponent(chatId)}&part=snippet,authorDetails&maxResults=2000&key=${key}`;
+    if(pageToken) u += `&pageToken=${pageToken}`;
+    const r = await fetch(u);
+    const d = await r.json();
+    if(d.error) throw new Error(d.error.message || "Erro ao buscar mensagens");
+    return d;
+  }
+
+  async function poll(){
+    if(!polling) return;
+    try{
+      const d = await fetchMessages($("apiKey").value.trim());
+      pageToken = d.nextPageToken;
+      (d.items||[]).forEach(it => {
+        const ts = new Date(it.snippet.publishedAt).getTime();
+        if(ts >= captureStart && !seen.has(it.id)){
+          seen.add(it.id);
+          comments.push({
+            id: it.id,
+            name: it.authorDetails.displayName,
+            msg: (it.snippet.displayMessage || "").trim(),
+            ts
+          });
+        }
+      });
+      render();
+      const wait = Math.max(d.pollingIntervalMillis || 3000, 2500);
+      if(polling) pollTimer = setTimeout(poll, wait);
+    }catch(e){
+      showErr("⚠️ " + e.message);
+      stopCapture();
+    }
+  }
+
+  function setStatus(live){
+    $("statusDot").className = "dot" + (live?" live":"");
+    $("statusTxt").textContent = live ? "Capturando ao vivo" : "Parado";
+    $("startBtn").disabled = live;
+    $("stopBtn").disabled = !live;
+  }
+
+  async function startCapture(){
+    clearErr();
+    const key = $("apiKey").value.trim();
+    const videoId = extractVideoId($("liveUrl").value);
+    if(!key){ showErr("Informe a chave da API do YouTube (clique em 🔑 para configurar)."); return; }
+    if(!videoId){ showErr("Link da live inválido. Cole a URL completa do vídeo ao vivo."); return; }
+    saveCfg();
+    $("startBtn").disabled = true;
+    try{
+      chatId = await getLiveChatId(videoId, key);
+      pageToken = null;
+      captureStart = Date.now();
+      polling = true;
+      setStatus(true);
+      poll();
+    }catch(e){
+      showErr("⚠️ " + e.message);
+      $("startBtn").disabled = false;
+    }
+  }
+
+  function stopCapture(){
+    polling = false;
+    if(pollTimer){ clearTimeout(pollTimer); pollTimer = null; }
+    setStatus(false);
+  }
+
+  $("startBtn").addEventListener("click", startCapture);
+  $("stopBtn").addEventListener("click", stopCapture);
+
+  // ---------- Limpar tudo ----------
+  $("clearAll").addEventListener("click", () => {
+    if(!confirm("Limpar todos os comentários e ganhadores para uma nova live?")) return;
+    stopCapture();
+    comments = []; seen.clear(); won.clear();
+    $("winners").innerHTML = ""; $("resetTools").style.display = "none";
+    clearErr(); render();
+  });
+
+  // ---------- Sorteio ----------
+  function shuffle(a){
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+
+  $("drawBtn").addEventListener("click", () => {
+    const qty = Math.max(1, parseInt($("qty").value)||1);
+    const pool = comments.filter(c => !won.has(c.id));
+    if(pool.length === 0){ alert("Não há participantes disponíveis para sortear."); return; }
+    const n = Math.min(qty, pool.length);
+    const picked = shuffle(pool.slice()).slice(0, n);
+    picked.forEach(p => won.add(p.id));
+
+    $("winners").innerHTML = picked.map((w,i) =>
+      `<div class="winner">
+         <div class="trophy">🏆</div>
+         <div>
+           <div class="wname">${escapeHtml(w.name)}</div>
+           <div class="wmsg">${escapeHtml(w.msg)}</div>
+         </div>
+         <span class="badge">${i+1}º</span>
+       </div>`).join("");
+    $("resetTools").style.display = "flex";
+    render();
+  });
+
+  $("newDraw").addEventListener("click", () => {
+    won.clear();
+    $("winners").innerHTML = "";
+    $("resetTools").style.display = "none";
+    render();
+  });
+
+  // ---------- Init ----------
+  loadCfg();
+  render();
+})();
+</script>
+</body>
+</html>
